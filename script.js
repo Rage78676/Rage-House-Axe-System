@@ -1,33 +1,14 @@
 /*********************************
- * Rage House Scoring
- * - Staff lock with PIN
- * - Unlimited players
- * - Custom rounds + throws
- * - Customers can ALWAYS score
- * - Start New Game is staff-only
- * - Start New Game removes empty names
- * - Target BIG underneath scoreboard
- * - Overlay alignment fixed
- * - Timer
- * - Email results with EmailJS
- * - QR customer email capture
- * - QR automatically appears when game finishes
- * - Instagram result image download
+ * Rage House Scoring V2
+ * New flow:
+ * - Staff unlocks
+ * - Staff enters names/timer/rounds/throws
+ * - Customers choose game
+ * - Timer ending locks system
  *********************************/
 
 const STAFF_PIN = "1234";
 
-/* EmailJS */
-const EMAILJS_PUBLIC_KEY = "n4VN4mRduLpnyikD_";
-const EMAILJS_SERVICE_ID = "AxeRageHouse786";
-const EMAILJS_TEMPLATE_ID = "template_y9ou20p";
-const BOOKING_LINK = "https://www.theragehouse.com/book-online";
-
-if (window.emailjs) {
-  emailjs.init(EMAILJS_PUBLIC_KEY);
-}
-
-/* Games */
 const GAMES = [
   {
     id: "ducks",
@@ -113,20 +94,72 @@ const GAMES = [
       { score: 2,  x: 471, y: 702 },
       { score: 2,  x: 640, y: 720 }
     ]
+  },
+  {
+    id: "speed-round",
+    name: "Speed Round",
+    image: "images/speed-round.png",
+    baseW: 1024,
+    baseH: 1024,
+    buttons: [
+      { score: 1,  x: 300, y: 300 },
+      { score: 2,  x: 450, y: 420 },
+      { score: 3,  x: 512, y: 512 },
+      { score: 5,  x: 650, y: 420 },
+      { score: 10, x: 720, y: 300 }
+    ]
+  },
+  {
+    id: "noughts-crosses",
+    name: "Noughts & Crosses",
+    image: "images/noughts-crosses.png",
+    baseW: 1024,
+    baseH: 1024,
+    buttons: [
+      { score: 1, x: 280, y: 280 },
+      { score: 1, x: 512, y: 280 },
+      { score: 1, x: 744, y: 280 },
+      { score: 1, x: 280, y: 512 },
+      { score: 1, x: 512, y: 512 },
+      { score: 1, x: 744, y: 512 },
+      { score: 1, x: 280, y: 744 },
+      { score: 1, x: 512, y: 744 },
+      { score: 1, x: 744, y: 744 }
+    ]
   }
 ];
 
+const KEY_STATE = "rh_scoring_v2_customer_game_select";
+
+let staffUnlocked = false;
+let undoStack = [];
+let timerInterval = null;
+
+let state = loadState() ?? {
+  lane: "Lane 1",
+  gameId: null,
+  sessionStarted: false,
+  sessionEnded: false,
+  rounds: 3,
+  throwsPerRound: 7,
+  players: ["Player 1", "Player 2"],
+  throws: [],
+  timerRunning: false,
+  timerEndsAt: null,
+  timerMinutes: 60
+};
+
 /* DOM */
+const navChooseGame = document.getElementById("navChooseGame");
 const navScoreboard = document.getElementById("navScoreboard");
-const navGames = document.getElementById("navGames");
-const navAllGames = document.getElementById("navAllGames");
+const navStaffSetup = document.getElementById("navStaffSetup");
 
+const pageChooseGame = document.getElementById("pageChooseGame");
 const pageScoreboard = document.getElementById("pageScoreboard");
-const pageGames = document.getElementById("pageGames");
-const pageAllGames = document.getElementById("pageAllGames");
+const pageStaffSetup = document.getElementById("pageStaffSetup");
 
-const mainApp = document.getElementById("mainApp");
-const emailCapturePage = document.getElementById("emailCapturePage");
+const gameCards = document.getElementById("gameCards");
+const chooseGameHelp = document.getElementById("chooseGameHelp");
 
 const unlockBtn = document.getElementById("unlockBtn");
 const kioskBtn = document.getElementById("kioskBtn");
@@ -138,14 +171,14 @@ const pinCancelBtn = document.getElementById("pinCancelBtn");
 const pinMsg = document.getElementById("pinMsg");
 
 const laneSelect = document.getElementById("laneSelect");
-const gameSelect = document.getElementById("gameSelect");
 const roundsInput = document.getElementById("roundsInput");
 const throwsInput = document.getElementById("throwsInput");
+const timerMinutesInput = document.getElementById("timerMinutesInput");
 
 const playersList = document.getElementById("playersList");
 const newPlayerName = document.getElementById("newPlayerName");
 const addPlayerBtn = document.getElementById("addPlayerBtn");
-const applyGameBtn = document.getElementById("applyGameBtn");
+const startSessionBtn = document.getElementById("startSessionBtn");
 const startNewGameBtn = document.getElementById("startNewGameBtn");
 
 const undoBtn = document.getElementById("undoBtn");
@@ -162,104 +195,60 @@ const statusText = document.getElementById("statusText");
 const laneLabel = document.getElementById("laneLabel");
 const timerLabel = document.getElementById("timerLabel");
 
-const timerMinutesInput = document.getElementById("timerMinutesInput");
-const startTimerBtn = document.getElementById("startTimerBtn");
-const stopTimerBtn = document.getElementById("stopTimerBtn");
-const resetTimerBtn = document.getElementById("resetTimerBtn");
-
-const customerEmail = document.getElementById("customerEmail");
-const emailResultsBtn = document.getElementById("emailResultsBtn");
-const qrEmailBtn = document.getElementById("qrEmailBtn");
-const instagramBtn = document.getElementById("instagramBtn");
-
-/* Storage */
-const KEY_STATE = "rh_scoring_phase1_full_v4";
-
-/* State */
-let staffUnlocked = false;
-let undoStack = [];
-let timerInterval = null;
-let qrAlreadyShownForThisGame = false;
-
-let state = loadState() ?? {
-  lane: "Lane 1",
-  gameId: GAMES[0].id,
-  rounds: 3,
-  throwsPerRound: 7,
-  players: ["Player 1", "Player 2"],
-  throws: [],
-  timerRunning: false,
-  timerEndsAt: null,
-  timerMinutes: 60
-};
+const sessionEndedOverlay = document.getElementById("sessionEndedOverlay");
 
 init();
 
 function init() {
-  const params = new URLSearchParams(window.location.search);
-
-  if (params.get("email") === "1") {
-    renderPhoneEmailCapture();
-    return;
-  }
-
-  gameSelect.innerHTML = GAMES.map(g => `<option value="${g.id}">${g.name}</option>`).join("");
-  gameSelect.value = state.gameId;
-
   laneSelect.value = state.lane;
   roundsInput.value = state.rounds;
   throwsInput.value = state.throwsPerRound;
-  timerMinutesInput.value = state.timerMinutes || 60;
+  timerMinutesInput.value = state.timerMinutes;
 
   laneLabel.textContent = state.lane;
 
-  if (!Array.isArray(state.throws) || state.throws.length === 0) {
-    resetScoreboard();
-  }
-
+  renderGameCards();
   renderPlayersEditor();
-  renderTarget();
   renderScoreboard();
+  renderTargetIfGameSelected();
   resumeTimer();
 
-  showPage("scoreboard");
   setStaffUnlocked(false);
 
+  if (state.sessionEnded) {
+    showSessionEndedOverlay();
+  } else {
+    hideSessionEndedOverlay();
+  }
+
+  showPage("choose");
+
+  navChooseGame.addEventListener("click", () => showPage("choose"));
   navScoreboard.addEventListener("click", () => showPage("scoreboard"));
-
-  navGames.addEventListener("click", () => {
-    if (staffUnlocked) showPage("games");
-  });
-
-  navAllGames.addEventListener("click", () => {
-    if (staffUnlocked) showPage("allgames");
+  navStaffSetup.addEventListener("click", () => {
+    if (staffUnlocked) showPage("staff");
   });
 
   unlockBtn.addEventListener("click", openPinModal);
   pinCancelBtn.addEventListener("click", closePinModal);
   pinOkBtn.addEventListener("click", tryUnlock);
-
-  pinInput.addEventListener("keydown", (e) => {
+  pinInput.addEventListener("keydown", e => {
     if (e.key === "Enter") tryUnlock();
   });
 
   addPlayerBtn.addEventListener("click", addPlayer);
-  applyGameBtn.addEventListener("click", applyGameSettings);
-  startNewGameBtn.addEventListener("click", startNewGame);
-
-  startTimerBtn.addEventListener("click", startTimer);
-  stopTimerBtn.addEventListener("click", stopTimer);
-  resetTimerBtn.addEventListener("click", resetTimer);
-
-  emailResultsBtn.addEventListener("click", () => emailResults(customerEmail.value));
-  qrEmailBtn.addEventListener("click", showQrEmailCapture);
-  instagramBtn.addEventListener("click", downloadInstagramResult);
+  startSessionBtn.addEventListener("click", startSession);
+  startNewGameBtn.addEventListener("click", resetSession);
 
   undoBtn.addEventListener("click", undo);
   missBtn.addEventListener("click", () => addScore(0));
   missOnBoardBtn.addEventListener("click", () => addScore(0));
 
-  overlay.addEventListener("click", (e) => {
+  overlay.addEventListener("click", e => {
+    if (state.sessionEnded) return;
+    if (!state.sessionStarted) return;
+    if (!state.gameId) return;
+
     const btn = e.target.closest(".scoreBtn");
     if (!btn) return;
 
@@ -273,22 +262,21 @@ function init() {
 
   window.addEventListener("resize", () => {
     const g = currentGame();
-    fitOverlayToContainedImage(g.baseW || 1024, g.baseH || 1024);
+    if (g) fitOverlayToContainedImage(g.baseW || 1024, g.baseH || 1024);
   });
 }
 
-/* Pages */
 function showPage(which) {
+  pageChooseGame.style.display = which === "choose" ? "" : "none";
   pageScoreboard.style.display = which === "scoreboard" ? "" : "none";
-  pageGames.style.display = which === "games" ? "" : "none";
-  pageAllGames.style.display = which === "allgames" ? "" : "none";
+  pageStaffSetup.style.display = which === "staff" ? "" : "none";
 
+  navChooseGame.classList.toggle("active", which === "choose");
   navScoreboard.classList.toggle("active", which === "scoreboard");
-  navGames.classList.toggle("active", which === "games");
-  navAllGames.classList.toggle("active", which === "allgames");
+  navStaffSetup.classList.toggle("active", which === "staff");
 }
 
-/* Staff lock */
+/* Staff */
 function openPinModal() {
   pinMsg.textContent = "";
   pinInput.value = "";
@@ -311,33 +299,71 @@ function tryUnlock() {
 
 function setStaffUnlocked(unlocked) {
   staffUnlocked = unlocked;
-
   unlockBtn.textContent = unlocked ? "🔓 Staff Unlocked" : "🔒 Staff Locked";
 
-  navGames.style.display = unlocked ? "" : "none";
-  navAllGames.style.display = unlocked ? "" : "none";
+  navStaffSetup.style.display = unlocked ? "" : "none";
 
-  const staffPageControls = pageGames.querySelectorAll("input, select, button");
-
-  staffPageControls.forEach(el => {
+  const controls = pageStaffSetup.querySelectorAll("input, select, button");
+  controls.forEach(el => {
     el.disabled = !unlocked;
-
-    if (unlocked) {
-      el.removeAttribute("disabled");
-      el.removeAttribute("aria-disabled");
-    } else {
-      el.setAttribute("disabled", "disabled");
-      el.setAttribute("aria-disabled", "true");
-    }
+    if (unlocked) el.removeAttribute("disabled");
+    else el.setAttribute("disabled", "disabled");
   });
 
   renderPlayersEditor();
 
-  if (unlocked) {
-    showPage("games");
-  } else {
-    showPage("scoreboard");
-  }
+  if (unlocked) showPage("staff");
+  else showPage("choose");
+}
+
+/* Session setup */
+function startSession() {
+  if (!staffUnlocked) return;
+
+  state.players = state.players.map(n => (n || "").trim()).filter(Boolean);
+  if (state.players.length === 0) state.players = ["Player 1"];
+
+  state.lane = laneSelect.value;
+  state.rounds = clampInt(roundsInput.value, 1, 20, 3);
+  state.throwsPerRound = clampInt(throwsInput.value, 1, 30, 7);
+  state.timerMinutes = clampInt(timerMinutesInput.value, 1, 180, 60);
+
+  state.sessionStarted = true;
+  state.sessionEnded = false;
+  state.gameId = null;
+  state.throws = [];
+
+  state.timerRunning = true;
+  state.timerEndsAt = Date.now() + state.timerMinutes * 60 * 1000;
+
+  laneLabel.textContent = state.lane;
+
+  saveState();
+  hideSessionEndedOverlay();
+  renderGameCards();
+  renderPlayersEditor();
+  renderScoreboard();
+  resumeTimer();
+  showPage("choose");
+}
+
+function resetSession() {
+  if (!staffUnlocked) return;
+
+  state.sessionStarted = false;
+  state.sessionEnded = false;
+  state.gameId = null;
+  state.throws = [];
+  state.timerRunning = false;
+  state.timerEndsAt = null;
+
+  saveState();
+  hideSessionEndedOverlay();
+  renderGameCards();
+  renderScoreboard();
+  renderTargetIfGameSelected();
+  renderTimer();
+  showPage("staff");
 }
 
 /* Players */
@@ -351,12 +377,6 @@ function renderPlayersEditor() {
     const input = document.createElement("input");
     input.value = name;
     input.disabled = !staffUnlocked;
-
-    if (staffUnlocked) {
-      input.removeAttribute("disabled");
-    } else {
-      input.setAttribute("disabled", "disabled");
-    }
 
     input.addEventListener("input", () => {
       state.players[idx] = input.value;
@@ -379,86 +399,54 @@ function addPlayer() {
   newPlayerName.value = "";
 
   saveState();
-  resetScoreboard();
   renderPlayersEditor();
-  renderScoreboard();
 }
 
-/* Settings */
-function applyGameSettings() {
-  if (!staffUnlocked) return;
+/* Game select */
+function renderGameCards() {
+  chooseGameHelp.textContent = state.sessionEnded
+    ? "Session has ended. Please speak to staff."
+    : state.sessionStarted
+      ? "Choose a game to begin."
+      : "Staff must start a session first.";
 
-  state.lane = laneSelect.value;
-  state.gameId = gameSelect.value;
-  state.rounds = clampInt(roundsInput.value, 1, 20, 3);
-  state.throwsPerRound = clampInt(throwsInput.value, 1, 30, 7);
-  state.timerMinutes = clampInt(timerMinutesInput.value, 1, 180, 60);
+  gameCards.innerHTML = "";
 
-  laneLabel.textContent = state.lane;
+  GAMES.forEach(game => {
+    const card = document.createElement("div");
+    card.className = "gameCard";
 
-  qrAlreadyShownForThisGame = false;
+    if (!state.sessionStarted || state.sessionEnded) {
+      card.classList.add("disabled");
+    }
 
-  saveState();
-  resetScoreboard();
-  renderTarget();
-  renderScoreboard();
-  showPage("scoreboard");
+    card.innerHTML = `
+      <img src="${game.image}" alt="${escapeHtml(game.name)}">
+      <div class="gameCardTitle">${escapeHtml(game.name)}</div>
+    `;
+
+    card.addEventListener("click", () => {
+      if (!state.sessionStarted || state.sessionEnded) return;
+      chooseGame(game.id);
+    });
+
+    gameCards.appendChild(card);
+  });
 }
 
-function startNewGame() {
-  if (!staffUnlocked) return;
+function chooseGame(gameId) {
+  if (!state.sessionStarted || state.sessionEnded) return;
 
-  state.players = state.players
-    .map(n => (n || "").trim())
-    .filter(n => n.length > 0);
-
-  if (state.players.length === 0) {
-    state.players = ["Player 1"];
-  }
-
-  qrAlreadyShownForThisGame = false;
-
-  saveState();
+  state.gameId = gameId;
   resetScoreboard();
-  renderPlayersEditor();
+  saveState();
+
+  renderTargetIfGameSelected();
   renderScoreboard();
   showPage("scoreboard");
 }
 
 /* Timer */
-function startTimer() {
-  if (!staffUnlocked) return;
-
-  const mins = clampInt(timerMinutesInput.value, 1, 180, 60);
-
-  state.timerMinutes = mins;
-  state.timerRunning = true;
-  state.timerEndsAt = Date.now() + mins * 60 * 1000;
-
-  saveState();
-  resumeTimer();
-}
-
-function stopTimer() {
-  if (!staffUnlocked) return;
-
-  state.timerRunning = false;
-  state.timerEndsAt = null;
-
-  saveState();
-  resumeTimer();
-}
-
-function resetTimer() {
-  if (!staffUnlocked) return;
-
-  state.timerRunning = false;
-  state.timerEndsAt = null;
-
-  saveState();
-  renderTimer();
-}
-
 function resumeTimer() {
   clearInterval(timerInterval);
   timerInterval = setInterval(renderTimer, 500);
@@ -479,34 +467,47 @@ function renderTimer() {
   timerLabel.textContent = `Timer: ${mm}:${ss}`;
 
   if (remaining <= 0) {
-    state.timerRunning = false;
-    state.timerEndsAt = null;
-    saveState();
-    timerLabel.textContent = "Timer: 00:00";
+    endSessionByTimer();
   }
 }
 
-/* Score data */
-function resetScoreboard() {
-  const pCount = state.players.length;
-  const rounds = state.rounds;
-  const throwsN = state.throwsPerRound;
+function endSessionByTimer() {
+  state.timerRunning = false;
+  state.timerEndsAt = null;
+  state.sessionEnded = true;
+  saveState();
 
-  state.throws = Array.from({ length: pCount }, () =>
-    Array.from({ length: rounds }, () =>
-      Array.from({ length: throwsN }, () => null)
+  timerLabel.textContent = "Timer: 00:00 - SESSION ENDED";
+  renderGameCards();
+  showSessionEndedOverlay();
+}
+
+function showSessionEndedOverlay() {
+  sessionEndedOverlay.style.display = "flex";
+}
+
+function hideSessionEndedOverlay() {
+  sessionEndedOverlay.style.display = "none";
+}
+
+/* Scoreboard data */
+function resetScoreboard() {
+  state.throws = Array.from({ length: state.players.length }, () =>
+    Array.from({ length: state.rounds }, () =>
+      Array.from({ length: state.throwsPerRound }, () => null)
     )
   );
-
   undoStack = [];
   saveState();
 }
 
 function findNextEmpty() {
+  if (!Array.isArray(state.throws) || state.throws.length === 0) return null;
+
   for (let r = 0; r < state.rounds; r++) {
     for (let p = 0; p < state.players.length; p++) {
       for (let t = 0; t < state.throwsPerRound; t++) {
-        if (state.throws[p][r][t] == null) return { p, r, t };
+        if (state.throws[p]?.[r]?.[t] == null) return { p, r, t };
       }
     }
   }
@@ -514,18 +515,12 @@ function findNextEmpty() {
   return null;
 }
 
-function roundTotal(p, r) {
-  return state.throws[p][r].reduce((a, b) => a + (b ?? 0), 0);
-}
-
-function gameTotal(p) {
-  return state.throws[p].reduce(
-    (sum, roundArr) => sum + roundArr.reduce((a, b) => a + (b ?? 0), 0),
-    0
-  );
-}
-
 function addScore(score) {
+  if (state.sessionEnded) {
+    alert("Session has ended. Please speak to staff.");
+    return;
+  }
+
   const next = findNextEmpty();
   if (!next) return;
 
@@ -536,14 +531,6 @@ function addScore(score) {
 
   saveState();
   renderScoreboard();
-
-  if (findNextEmpty() === null && !qrAlreadyShownForThisGame) {
-    qrAlreadyShownForThisGame = true;
-
-    setTimeout(() => {
-      showQrEmailCapture();
-    }, 500);
-  }
 }
 
 function undo() {
@@ -551,20 +538,99 @@ function undo() {
   if (!last) return;
 
   state.throws[last.p][last.r][last.t] = last.prev;
-
-  qrAlreadyShownForThisGame = false;
-
   saveState();
   renderScoreboard();
 }
 
+function roundTotal(p, r) {
+  if (!state.throws[p] || !state.throws[p][r]) return 0;
+  return state.throws[p][r].reduce((a, b) => a + (b ?? 0), 0);
+}
+
+function gameTotal(p) {
+  if (!state.throws[p]) return 0;
+  return state.throws[p].reduce((sum, roundArr) => {
+    return sum + roundArr.reduce((a, b) => a + (b ?? 0), 0);
+  }, 0);
+}
+
+function renderScoreboard() {
+  if (!state.gameId) {
+    scoreboardEl.innerHTML = `<div class="muted" style="padding:14px;">No game selected yet.</div>`;
+    statusText.textContent = state.sessionStarted
+      ? "Choose a game to begin"
+      : "Staff must start a session first";
+    return;
+  }
+
+  if (!Array.isArray(state.throws) || state.throws.length === 0) {
+    resetScoreboard();
+  }
+
+  const next = findNextEmpty();
+  statusText.textContent = next
+    ? `Round ${next.r + 1}, Throw ${next.t + 1} — ${state.players[next.p]}`
+    : "Game finished";
+
+  let html = `<table><thead>`;
+  html += `<tr><th class="stickyLeft" rowspan="2">Player</th>`;
+
+  for (let r = 0; r < state.rounds; r++) {
+    html += `<th colspan="${state.throwsPerRound + 1}">Round ${r + 1}</th>`;
+  }
+
+  html += `<th class="totalCell" rowspan="2">Total</th></tr>`;
+  html += `<tr>`;
+
+  for (let r = 0; r < state.rounds; r++) {
+    for (let t = 0; t < state.throwsPerRound; t++) {
+      html += `<th>${t + 1}</th>`;
+    }
+    html += `<th class="totalCell">T</th>`;
+  }
+
+  html += `</tr></thead><tbody>`;
+
+  for (let p = 0; p < state.players.length; p++) {
+    html += `<tr><td class="stickyLeft">${escapeHtml(state.players[p])}</td>`;
+
+    for (let r = 0; r < state.rounds; r++) {
+      for (let t = 0; t < state.throwsPerRound; t++) {
+        html += `<td>${state.throws[p]?.[r]?.[t] ?? ""}</td>`;
+      }
+
+      html += `<td class="totalCell">${roundTotal(p, r)}</td>`;
+    }
+
+    html += `<td class="totalCell">${gameTotal(p)}</td></tr>`;
+  }
+
+  html += `</tbody></table>`;
+  scoreboardEl.innerHTML = html;
+}
+
 /* Target */
 function currentGame() {
-  return GAMES.find(g => g.id === state.gameId) ?? GAMES[0];
+  if (!state.gameId) return null;
+  return GAMES.find(g => g.id === state.gameId) ?? null;
+}
+
+function renderTargetIfGameSelected() {
+  const g = currentGame();
+
+  if (!g) {
+    gameImage.removeAttribute("src");
+    overlay.innerHTML = "";
+    return;
+  }
+
+  renderTarget();
 }
 
 function renderTarget() {
   const g = currentGame();
+  if (!g) return;
+
   const baseW = g.baseW || 1024;
   const baseH = g.baseH || 1024;
 
@@ -613,7 +679,6 @@ function fitOverlayToContainedImage(baseW, baseH) {
   const stageH = targetStage.clientHeight;
 
   const scale = Math.min(stageW / baseW, stageH / baseH);
-
   const drawW = baseW * scale;
   const drawH = baseH * scale;
 
@@ -624,293 +689,6 @@ function fitOverlayToContainedImage(baseW, baseH) {
   overlay.style.height = `${drawH}px`;
   overlay.style.left = `${offsetX}px`;
   overlay.style.top = `${offsetY}px`;
-}
-
-/* Scoreboard */
-function renderScoreboard() {
-  const rounds = state.rounds;
-  const throwsN = state.throwsPerRound;
-  const pCount = state.players.length;
-
-  const next = findNextEmpty();
-
-  statusText.textContent = next
-    ? `Round ${next.r + 1}, Throw ${next.t + 1} — ${state.players[next.p]}`
-    : `Game finished`;
-
-  let html = `<table><thead>`;
-  html += `<tr><th class="stickyLeft" rowspan="2">Player</th>`;
-
-  for (let r = 0; r < rounds; r++) {
-    html += `<th colspan="${throwsN + 1}">Round ${r + 1}</th>`;
-  }
-
-  html += `<th class="totalCell" rowspan="2">Total</th></tr>`;
-  html += `<tr>`;
-
-  for (let r = 0; r < rounds; r++) {
-    for (let t = 0; t < throwsN; t++) {
-      html += `<th>${t + 1}</th>`;
-    }
-
-    html += `<th class="totalCell">T</th>`;
-  }
-
-  html += `</tr></thead><tbody>`;
-
-  for (let p = 0; p < pCount; p++) {
-    html += `<tr><td class="stickyLeft">${escapeHtml(state.players[p])}</td>`;
-
-    for (let r = 0; r < rounds; r++) {
-      for (let t = 0; t < throwsN; t++) {
-        html += `<td>${state.throws[p][r][t] ?? ""}</td>`;
-      }
-
-      html += `<td class="totalCell">${roundTotal(p, r)}</td>`;
-    }
-
-    html += `<td class="totalCell">${gameTotal(p)}</td></tr>`;
-  }
-
-  html += `</tbody></table>`;
-
-  scoreboardEl.innerHTML = html;
-}
-
-/* Results */
-function buildResults() {
-  const players = state.players
-    .map((name, idx) => ({
-      name,
-      total: gameTotal(idx)
-    }))
-    .sort((a, b) => b.total - a.total);
-
-  return {
-    lane: state.lane,
-    game: currentGame().name,
-    date: new Date().toLocaleString(),
-    winner: players[0]?.name || "No winner",
-    resultsText: players.map((p, i) => `${i + 1}. ${p.name} — ${p.total}`).join("\n"),
-    players
-  };
-}
-
-/* Email results */
-async function emailResults(emailAddress) {
-  if (!staffUnlocked) return;
-
-  const email = (emailAddress || "").trim();
-
-  if (!email) {
-    alert("Enter customer email");
-    return;
-  }
-
-  if (!window.emailjs) {
-    alert("EmailJS has not loaded. Check internet connection.");
-    return;
-  }
-
-  const r = buildResults();
-
-  try {
-    await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
-      {
-        to_email: email,
-        lane: r.lane,
-        game: r.game,
-        date: r.date,
-        winner: r.winner,
-        results: r.resultsText,
-        booking_link: BOOKING_LINK
-      }
-    );
-
-    alert("Results emailed successfully!");
-  } catch (err) {
-    console.error("EMAILJS ERROR:", err);
-
-    alert(
-      "Email failed:\n\n" +
-      (
-        err?.text ||
-        err?.message ||
-        JSON.stringify(err)
-      )
-    );
-  }
-}
-
-/* QR email capture */
-function showQrEmailCapture() {
-  const r = buildResults();
-  const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(JSON.stringify(r)))));
-  const url = `${location.origin}${location.pathname}?email=1#d=${encoded}`;
-
-  const modal = document.createElement("div");
-  modal.className = "modal";
-
-  modal.innerHTML = `
-    <div class="qrBox">
-      <h2>Scan to Email Results</h2>
-      <p class="muted">Customer scans this and enters their email on their phone.</p>
-      <canvas id="qrCanvas"></canvas>
-      <div class="buttonRow" style="justify-content:center;">
-        <button class="btnDark" id="closeQrBtn">Close</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  if (window.QRCode) {
-    QRCode.toCanvas(document.getElementById("qrCanvas"), url, { width: 260 });
-  } else {
-    document.getElementById("qrCanvas").replaceWith("QR failed to load.");
-  }
-
-  document.getElementById("closeQrBtn").onclick = () => modal.remove();
-}
-
-/* Phone email capture page */
-function renderPhoneEmailCapture() {
-  if (mainApp) mainApp.style.display = "none";
-
-  const topBar = document.querySelector(".topBar");
-  if (topBar) topBar.style.display = "none";
-
-  emailCapturePage.style.display = "";
-
-  let data;
-
-  try {
-    const raw = decodeURIComponent(location.hash.replace("#d=", ""));
-    data = JSON.parse(decodeURIComponent(escape(atob(raw))));
-  } catch {
-    emailCapturePage.innerHTML = `
-      <div class="emailCard">
-        <h2>Invalid Results Link</h2>
-        <p>Please ask staff to create a new QR code.</p>
-      </div>
-    `;
-    return;
-  }
-
-  emailCapturePage.innerHTML = `
-    <div class="emailCard">
-      <h2>The Rage House Results 🎯</h2>
-      <p><strong>Lane:</strong> ${escapeHtml(data.lane)}</p>
-      <p><strong>Game:</strong> ${escapeHtml(data.game)}</p>
-      <p><strong>Winner:</strong> ${escapeHtml(data.winner)}</p>
-
-      <label class="label">Enter your email</label>
-      <input id="phoneEmail" type="email" placeholder="your@email.com" />
-
-      <button class="btnPrimary wide" id="phoneSendBtn">Send My Results</button>
-
-      <p class="muted tiny">We’ll email your scores and booking link.</p>
-    </div>
-  `;
-
-  document.getElementById("phoneSendBtn").onclick = async () => {
-    const email = document.getElementById("phoneEmail").value.trim();
-
-    if (!email) {
-      alert("Enter your email");
-      return;
-    }
-
-    if (!window.emailjs) {
-      alert("EmailJS has not loaded. Check internet connection.");
-      return;
-    }
-
-    try {
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        {
-          to_email: email,
-          lane: data.lane,
-          game: data.game,
-          date: data.date,
-          winner: data.winner,
-          results: data.resultsText,
-          booking_link: BOOKING_LINK
-        }
-      );
-
-      alert("Results sent!");
-    } catch (err) {
-      console.error("EMAILJS PHONE ERROR:", err);
-
-      alert(
-        "Email failed:\n\n" +
-        (
-          err?.text ||
-          err?.message ||
-          JSON.stringify(err)
-        )
-      );
-    }
-  };
-}
-
-/* Instagram image */
-async function downloadInstagramResult() {
-  if (!staffUnlocked) return;
-
-  if (!window.html2canvas) {
-    alert("Instagram export has not loaded. Check internet connection.");
-    return;
-  }
-
-  const r = buildResults();
-
-  const card = document.createElement("div");
-  card.className = "instaCard";
-  card.style.width = "1080px";
-  card.style.height = "1080px";
-  card.style.position = "fixed";
-  card.style.left = "-99999px";
-  card.style.top = "0";
-  card.style.padding = "70px";
-  card.style.background = "#ffffff";
-  card.style.color = "#111827";
-
-  card.innerHTML = `
-    <h1 style="font-size:64px;margin:0;">THE RAGE HOUSE</h1>
-    <h2 style="font-size:44px;margin:22px 0;">${escapeHtml(r.game)} Results</h2>
-    <p style="font-size:30px;">${escapeHtml(r.lane)} · ${escapeHtml(r.date)}</p>
-    <h2 style="font-size:48px;">Winner: ${escapeHtml(r.winner)} 👑</h2>
-
-    <div style="margin-top:30px;">
-      ${r.players.map(p => `
-        <div class="resultLine" style="font-size:34px;">
-          <span>${escapeHtml(p.name)}</span>
-          <span>${p.total}</span>
-        </div>
-      `).join("")}
-    </div>
-
-    <p style="position:absolute;bottom:60px;font-size:28px;">
-      Book again: theragehouse.com
-    </p>
-  `;
-
-  document.body.appendChild(card);
-
-  const canvas = await html2canvas(card, { scale: 1 });
-
-  const a = document.createElement("a");
-  a.href = canvas.toDataURL("image/png");
-  a.download = `rage-house-results-${Date.now()}.png`;
-  a.click();
-
-  card.remove();
 }
 
 /* Fullscreen */
@@ -925,19 +703,17 @@ async function enterFullscreen() {
 /* Helpers */
 function clampInt(v, min, max, fallback) {
   const n = Number(v);
-
   if (!Number.isFinite(n)) return fallback;
-
   return Math.max(min, Math.min(max, Math.floor(n)));
 }
 
 function escapeHtml(s) {
   return String(s ?? "").replace(/[&<>"']/g, c => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#039;"
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#039;"
   }[c]));
 }
 
