@@ -1,10 +1,5 @@
 /*********************************
  * Rage House Scoring V2
- * New flow:
- * - Staff unlocks
- * - Staff enters names/timer/rounds/throws
- * - Customers choose game
- * - Timer ending locks system
  *********************************/
 
 const STAFF_PIN = "1234";
@@ -17,16 +12,16 @@ const GAMES = [
     baseW: 1024,
     baseH: 1024,
     buttons: [
-      { score: 1,  x: 370, y: 403 },
-      { score: 2,  x: 462, y: 485 },
-      { score: 6,  x: 598, y: 397 },
-      { score: 7,  x: 384, y: 553 },
-      { score: 3,  x: 473, y: 606 },
-      { score: 5,  x: 615, y: 569 },
+      { score: 1, x: 370, y: 403 },
+      { score: 2, x: 462, y: 485 },
+      { score: 6, x: 598, y: 397 },
+      { score: 7, x: 384, y: 553 },
+      { score: 3, x: 473, y: 606 },
+      { score: 5, x: 615, y: 569 },
       { score: 10, x: 665, y: 635 },
-      { score: 4,  x: 571, y: 680 },
-      { score: 8,  x: 396, y: 701 },
-      { score: 9,  x: 336, y: 633 }
+      { score: 4, x: 571, y: 680 },
+      { score: 8, x: 396, y: 701 },
+      { score: 9, x: 336, y: 633 }
     ]
   },
   {
@@ -51,25 +46,25 @@ const GAMES = [
     baseH: 1024,
     buttons: [
       { score: 20, x: 509, y: 324 },
-      { score: 1,  x: 566, y: 334 },
+      { score: 1, x: 566, y: 334 },
       { score: 18, x: 617, y: 362 },
-      { score: 4,  x: 649, y: 401 },
+      { score: 4, x: 649, y: 401 },
       { score: 13, x: 670, y: 451 },
-      { score: 6,  x: 677, y: 497 },
+      { score: 6, x: 677, y: 497 },
       { score: 10, x: 678, y: 548 },
       { score: 15, x: 650, y: 598 },
-      { score: 2,  x: 612, y: 642 },
+      { score: 2, x: 612, y: 642 },
       { score: 17, x: 565, y: 660 },
-      { score: 3,  x: 510, y: 671 },
+      { score: 3, x: 510, y: 671 },
       { score: 19, x: 456, y: 666 },
-      { score: 7,  x: 408, y: 642 },
+      { score: 7, x: 408, y: 642 },
       { score: 16, x: 367, y: 602 },
-      { score: 8,  x: 384, y: 546 },
+      { score: 8, x: 384, y: 546 },
       { score: 11, x: 340, y: 498 },
       { score: 14, x: 341, y: 441 },
-      { score: 9,  x: 369, y: 395 },
+      { score: 9, x: 369, y: 395 },
       { score: 12, x: 411, y: 357 },
-      { score: 5,  x: 452, y: 333 }
+      { score: 5, x: 452, y: 333 }
     ]
   },
   {
@@ -80,19 +75,19 @@ const GAMES = [
     baseH: 1024,
     buttons: [
       { score: 10, x: 537, y: 316 },
-      { score: 1,  x: 395, y: 328 },
-      { score: 2,  x: 477, y: 435 },
-      { score: 2,  x: 533, y: 437 },
-      { score: 2,  x: 404, y: 458 },
-      { score: 3,  x: 517, y: 515 },
-      { score: 2,  x: 604, y: 487 },
-      { score: 2,  x: 550, y: 563 },
-      { score: 2,  x: 486, y: 570 },
-      { score: 2,  x: 523, y: 627 },
-      { score: 2,  x: 649, y: 630 },
-      { score: 2,  x: 586, y: 690 },
-      { score: 2,  x: 471, y: 702 },
-      { score: 2,  x: 640, y: 720 }
+      { score: 1, x: 395, y: 328 },
+      { score: 2, x: 477, y: 435 },
+      { score: 2, x: 533, y: 437 },
+      { score: 2, x: 404, y: 458 },
+      { score: 3, x: 517, y: 515 },
+      { score: 2, x: 604, y: 487 },
+      { score: 2, x: 550, y: 563 },
+      { score: 2, x: 486, y: 570 },
+      { score: 2, x: 523, y: 627 },
+      { score: 2, x: 649, y: 630 },
+      { score: 2, x: 586, y: 690 },
+      { score: 2, x: 471, y: 702 },
+      { score: 2, x: 640, y: 720 }
     ]
   },
   {
@@ -102,17 +97,17 @@ const GAMES = [
     baseW: 1024,
     baseH: 1024,
     buttons: [
-      { score: 1,  x: 300, y: 300 },
-      { score: 2,  x: 450, y: 420 },
-      { score: 3,  x: 512, y: 512 },
-      { score: 5,  x: 650, y: 420 },
+      { score: 1, x: 300, y: 300 },
+      { score: 2, x: 450, y: 420 },
+      { score: 3, x: 512, y: 512 },
+      { score: 5, x: 650, y: 420 },
       { score: 10, x: 720, y: 300 }
     ]
   },
   {
     id: "noughts-crosses",
     name: "Noughts & Crosses",
-    image: "images/noughts-crosses.png",
+    image: "images/Naughts & Crossies.png",
     baseW: 1024,
     baseH: 1024,
     buttons: [
@@ -129,7 +124,7 @@ const GAMES = [
   }
 ];
 
-const KEY_STATE = "rh_scoring_v2_customer_game_select";
+const KEY_STATE = "rh_scoring_v2_customer_game_select_fixed";
 
 let staffUnlocked = false;
 let undoStack = [];
@@ -215,16 +210,19 @@ function init() {
 
   setStaffUnlocked(false);
 
-  if (state.sessionEnded) {
-    showSessionEndedOverlay();
-  } else {
-    hideSessionEndedOverlay();
-  }
+  if (state.sessionEnded) showSessionEndedOverlay();
+  else hideSessionEndedOverlay();
 
   showPage("choose");
 
-  navChooseGame.addEventListener("click", () => showPage("choose"));
-  navScoreboard.addEventListener("click", () => showPage("scoreboard"));
+  navChooseGame.addEventListener("click", () => {
+    if (!state.sessionEnded) showPage("choose");
+  });
+
+  navScoreboard.addEventListener("click", () => {
+    if (!state.sessionEnded) showPage("scoreboard");
+  });
+
   navStaffSetup.addEventListener("click", () => {
     if (staffUnlocked) showPage("staff");
   });
@@ -313,7 +311,7 @@ function setStaffUnlocked(unlocked) {
   renderPlayersEditor();
 
   if (unlocked) showPage("staff");
-  else showPage("choose");
+  else if (!state.sessionEnded) showPage("choose");
 }
 
 /* Session setup */
@@ -455,7 +453,7 @@ function resumeTimer() {
 
 function renderTimer() {
   if (!state.timerRunning || !state.timerEndsAt) {
-    timerLabel.textContent = "Timer: --:--";
+    timerLabel.textContent = state.sessionEnded ? "Timer: 00:00 - SESSION ENDED" : "Timer: --:--";
     return;
   }
 
@@ -483,7 +481,28 @@ function endSessionByTimer() {
 }
 
 function showSessionEndedOverlay() {
+  sessionEndedOverlay.innerHTML = `
+    <div class="sessionEndedBox">
+      <img src="images/logo.png" alt="The Rage House Logo">
+      <h1>Session Ended</h1>
+      <p>Please speak to a member of staff.</p>
+      <button class="btnDark" id="staffResetFromEnded">Staff Reset Session</button>
+    </div>
+  `;
+
   sessionEndedOverlay.style.display = "flex";
+
+  const resetBtn = document.getElementById("staffResetFromEnded");
+  resetBtn.addEventListener("click", () => {
+    const pin = prompt("Enter staff PIN to reset session");
+
+    if (pin === STAFF_PIN) {
+      setStaffUnlocked(true);
+      resetSession();
+    } else if (pin !== null) {
+      alert("Incorrect PIN");
+    }
+  });
 }
 
 function hideSessionEndedOverlay() {
@@ -497,6 +516,7 @@ function resetScoreboard() {
       Array.from({ length: state.throwsPerRound }, () => null)
     )
   );
+
   undoStack = [];
   saveState();
 }
