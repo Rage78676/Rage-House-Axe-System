@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -6,15 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Rage House Scoring</title>
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Required for Email Results -->
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-
-  <!-- Required for QR Code -->
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-
-  <!-- Required for Instagram Result Image -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -30,30 +20,42 @@
     </div>
   </header>
 
-  <!-- Used when customer scans QR code -->
-  <div id="emailCapturePage" style="display:none;"></div>
-
-  <div class="layout" id="mainApp">
+  <div class="layout">
     <aside class="sidebar">
       <div class="brand">
+        <img src="images/logo.png" alt="The Rage House Logo" class="siteLogo">
         <div class="brandTitle">THE RAGE HOUSE</div>
         <div class="brandSub">Scoring System</div>
       </div>
 
       <nav class="nav">
-        <button class="navItem active" id="navScoreboard">Scoreboard</button>
-        <button class="navItem" id="navGames">Games</button>
-        <button class="navItem" id="navAllGames">All Games</button>
+        <button class="navItem active" id="navChooseGame">Choose Game</button>
+        <button class="navItem" id="navScoreboard">Scoreboard</button>
+        <button class="navItem" id="navStaffSetup">Staff Setup</button>
       </nav>
 
       <div class="hint">
-        Staff controls appear only when unlocked.
+        Staff set up the session. Customers choose the game.
       </div>
     </aside>
 
     <main class="main">
+      <!-- CUSTOMER GAME SELECT PAGE -->
+      <section id="pageChooseGame">
+        <div class="card">
+          <div class="cardHeader">
+            <div>
+              <h2 class="h2">Choose Your Game</h2>
+              <div class="muted" id="chooseGameHelp">Staff must start a session first.</div>
+            </div>
+          </div>
+
+          <div class="gameGrid" id="gameCards"></div>
+        </div>
+      </section>
+
       <!-- SCOREBOARD PAGE -->
-      <section id="pageScoreboard">
+      <section id="pageScoreboard" style="display:none;">
         <div class="card">
           <div class="cardHeader">
             <div>
@@ -85,13 +87,13 @@
         </div>
       </section>
 
-      <!-- GAMES PAGE / STAFF ONLY -->
-      <section id="pageGames" style="display:none;">
+      <!-- STAFF SETUP PAGE -->
+      <section id="pageStaffSetup" style="display:none;">
         <div class="card">
           <div class="cardHeader">
             <div>
-              <h2 class="h2">Games</h2>
-              <div class="muted">Staff-only setup</div>
+              <h2 class="h2">Staff Setup</h2>
+              <div class="muted">Unlock to set names, timer, rounds and throws.</div>
             </div>
           </div>
 
@@ -103,9 +105,6 @@
                 <option>Lane 2</option>
                 <option>Lane 3</option>
               </select>
-
-              <label class="label">Game</label>
-              <select id="gameSelect" disabled></select>
 
               <div class="grid2small">
                 <div>
@@ -119,28 +118,11 @@
                 </div>
               </div>
 
-              <button class="btnPrimary wide" id="applyGameBtn" disabled>Apply Game</button>
-              <button class="btnDark wide" id="startNewGameBtn" disabled>Start New Game</button>
-
-              <div class="hr"></div>
-
               <label class="label">Timer Minutes</label>
               <input id="timerMinutesInput" type="number" min="1" max="180" value="60" disabled />
 
-              <div class="buttonRow">
-                <button class="btnPrimary" id="startTimerBtn" disabled>Start Timer</button>
-                <button class="btn" id="stopTimerBtn" disabled>Stop Timer</button>
-                <button class="btn" id="resetTimerBtn" disabled>Reset Timer</button>
-              </div>
-
-              <div class="hr"></div>
-
-              <label class="label">Customer Email</label>
-              <input id="customerEmail" type="email" placeholder="customer@email.com" disabled />
-
-              <button class="btnPrimary wide" id="emailResultsBtn" disabled>Email Results</button>
-              <button class="btn wide" id="qrEmailBtn" disabled>Show QR Email Capture</button>
-              <button class="btnDark wide" id="instagramBtn" disabled>Download Instagram Result</button>
+              <button class="btnPrimary wide" id="startSessionBtn" disabled>Start Session</button>
+              <button class="btnDark wide" id="startNewGameBtn" disabled>Start New Session / Reset</button>
             </div>
 
             <div>
@@ -153,28 +135,25 @@
               </div>
 
               <div class="muted tiny" style="margin-top:8px;">
-                Tip: Leave blanks if you want, “Start New Game” will remove empty names.
+                Add names here. Customers cannot edit names.
               </div>
             </div>
           </div>
         </div>
       </section>
-
-      <!-- ALL GAMES PAGE -->
-      <section id="pageAllGames" style="display:none;">
-        <div class="card">
-          <div class="cardHeader">
-            <h2 class="h2">All Games</h2>
-            <div class="muted">You can expand this later.</div>
-          </div>
-
-          <div class="muted">No history view in this version.</div>
-        </div>
-      </section>
     </main>
   </div>
 
-  <!-- STAFF PIN MODAL -->
+  <!-- SESSION ENDED OVERLAY -->
+  <div id="sessionEndedOverlay" style="display:none;">
+    <div class="sessionEndedBox">
+      <img src="images/logo.png" alt="The Rage House Logo">
+      <h1>Session Ended</h1>
+      <p>Please speak to a member of staff.</p>
+    </div>
+  </div>
+
+  <!-- PIN MODAL -->
   <div class="modal" id="pinModal" style="display:none;">
     <div class="modalInner">
       <h3 class="h3">Staff Unlock</h3>
@@ -191,7 +170,6 @@
     </div>
   </div>
 
-  <!-- Main scoring code must stay LAST -->
   <script src="script.js"></script>
 </body>
 </html>
