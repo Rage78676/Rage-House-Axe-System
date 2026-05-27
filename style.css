@@ -4,7 +4,7 @@
   --text:#111827;
   --muted:#6b7280;
   --line:#e5e7eb;
-  --shadow: 0 8px 30px rgba(0,0,0,.08);
+  --shadow:0 8px 30px rgba(0,0,0,.08);
   --radius:16px;
 }
 
@@ -12,15 +12,15 @@
 
 body{
   margin:0;
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   background:var(--bg);
   color:var(--text);
 }
 
 .topBar{
-  position: sticky;
+  position:sticky;
   top:0;
-  z-index: 20;
+  z-index:20;
   background:#fff;
   border-bottom:1px solid var(--line);
   padding:10px 14px;
@@ -47,20 +47,20 @@ body{
 
 .layout{
   display:grid;
-  grid-template-columns: 240px 1fr;
-  gap: 14px;
-  padding: 14px;
+  grid-template-columns:240px 1fr;
+  gap:14px;
+  padding:14px;
 }
 
 .sidebar{
   background:#fff;
   border:1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 14px;
-  height: calc(100vh - 86px);
-  position: sticky;
-  top: 70px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
+  height:calc(100vh - 86px);
+  position:sticky;
+  top:70px;
 }
 
 .siteLogo{
@@ -70,8 +70,16 @@ body{
   margin-bottom:10px;
 }
 
-.brandTitle{font-weight: 1000; letter-spacing:.5px;}
-.brandSub{color:var(--muted); font-size:13px; margin-top:2px;}
+.brandTitle{
+  font-weight:1000;
+  letter-spacing:.5px;
+}
+
+.brandSub{
+  color:var(--muted);
+  font-size:13px;
+  margin-top:2px;
+}
 
 .nav{
   display:flex;
@@ -84,8 +92,8 @@ body{
   border:1px solid var(--line);
   background:#fff;
   padding:10px 12px;
-  border-radius: 12px;
-  font-weight: 900;
+  border-radius:12px;
+  font-weight:900;
   cursor:pointer;
   text-align:left;
 }
@@ -105,7 +113,7 @@ body{
 }
 
 .main{
-  min-height: calc(100vh - 86px);
+  min-height:calc(100vh - 86px);
   display:flex;
   flex-direction:column;
   gap:14px;
@@ -114,9 +122,9 @@ body{
 .card{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 14px;
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:14px;
 }
 
 .cardHeader{
@@ -127,15 +135,18 @@ body{
   margin-bottom:10px;
 }
 
-.h2{margin:0; font-size:18px;}
-.h3{margin:0 0 6px 0; font-size:18px;}
-.muted{color:var(--muted); font-size:13px;}
+.h2{margin:0;font-size:18px;}
+.h3{margin:0 0 6px 0;font-size:18px;}
+.muted{color:var(--muted);font-size:13px;}
 .tiny{font-size:12px}
 
-button:disabled{opacity:.55; cursor:not-allowed;}
+button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
 
-.btn, .btnPrimary, .btnDark{
-  border-radius: 12px;
+.btn,.btnPrimary,.btnDark{
+  border-radius:12px;
   border:1px solid var(--line);
   padding:10px 12px;
   font-weight:900;
@@ -173,7 +184,7 @@ button:disabled{opacity:.55; cursor:not-allowed;}
   margin:10px 0 6px;
 }
 
-input, select{
+input,select{
   width:100%;
   padding:10px 12px;
   border-radius:12px;
@@ -184,13 +195,13 @@ input, select{
 
 .grid2{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:14px;
 }
 
 .grid2small{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:10px;
 }
 
@@ -202,14 +213,14 @@ input, select{
 
 .playerRow{
   display:grid;
-  grid-template-columns: 1fr;
+  grid-template-columns:1fr;
   gap:10px;
   align-items:center;
 }
 
 .addPlayerRow{
   display:grid;
-  grid-template-columns: 1fr 130px;
+  grid-template-columns:1fr 130px;
   gap:10px;
   margin-top:10px;
 }
@@ -217,7 +228,7 @@ input, select{
 /* Game selection */
 .gameGrid{
   display:grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  grid-template-columns:repeat(3,minmax(180px,1fr));
   gap:14px;
 }
 
@@ -225,7 +236,7 @@ input, select{
   border:1px solid var(--line);
   border-radius:18px;
   background:#fff;
-  box-shadow: var(--shadow);
+  box-shadow:var(--shadow);
   overflow:hidden;
   cursor:pointer;
   transition:.15s transform ease;
@@ -258,30 +269,32 @@ input, select{
 .tableWrap{
   overflow:auto;
   border:1px solid var(--line);
-  border-radius: 14px;
+  border-radius:14px;
 }
 
 table{
   border-collapse:collapse;
   width:100%;
-  min-width: 900px;
+  min-width:900px;
 }
 
-th, td{
+th,td{
   border-bottom:1px solid var(--line);
-  padding:10px 10px;
+  padding:10px;
   text-align:center;
   font-weight:800;
   font-size:14px;
 }
 
-thead th{background:#fafafa;}
+thead th{
+  background:#fafafa;
+}
 
 .stickyLeft{
-  position: sticky;
+  position:sticky;
   left:0;
   background:#fff;
-  z-index: 2;
+  z-index:2;
   text-align:left;
 }
 
@@ -294,15 +307,15 @@ thead th{background:#fafafa;}
 .targetWrap{
   display:flex;
   justify-content:center;
-  padding: 10px 0;
+  padding:10px 0;
 }
 
 .targetStage{
-  position: relative;
-  width: min(980px, 100%);
-  aspect-ratio: 1 / 1;
-  border-radius: 18px;
-  overflow: hidden;
+  position:relative;
+  width:min(980px,100%);
+  aspect-ratio:1 / 1;
+  border-radius:18px;
+  overflow:hidden;
   background:#f3f4f6;
   border:1px solid var(--line);
 }
@@ -310,7 +323,7 @@ thead th{background:#fafafa;}
 #gameImage{
   width:100%;
   height:100%;
-  object-fit: contain;
+  object-fit:contain;
   display:block;
 }
 
@@ -322,45 +335,65 @@ thead th{background:#fafafa;}
   height:0;
 }
 
-.scoreBtn{cursor:pointer; user-select:none;}
+/* Clickable score buttons */
+.scoreBtn{
+  cursor:pointer;
+  user-select:none;
+}
 
 .scoreBtn circle{
-  fill: rgba(255,255,255,0.0);
-  stroke: rgba(255,255,255,0.0);
-  stroke-width: 0;
+  fill:rgba(255,255,255,0);
+  stroke:rgba(255,255,255,0);
+  stroke-width:0;
 }
 
 .scoreBtn text{
-  font-weight: 1000;
+  font-weight:1000;
   fill:#ffffff;
-  font-size: 34px;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  paint-order: stroke;
-  stroke: rgba(0,0,0,0.55);
-  stroke-width: 4px;
+  font-size:44px;
+  text-anchor:middle;
+  dominant-baseline:middle;
+  paint-order:stroke;
+  stroke:rgba(0,0,0,.55);
+  stroke-width:5px;
+  pointer-events:none;
 }
 
-.scoreBtn:hover text{ stroke-width: 6px; }
+.scoreBtn:hover text{
+  stroke-width:6px;
+}
+
+/* Noughts & Crosses X/O marks */
+.xoMark{
+  font-weight:1000;
+  font-size:130px;
+  text-anchor:middle;
+  dominant-baseline:middle;
+  fill:#ffffff;
+  paint-order:stroke;
+  stroke:rgba(0,0,0,.75);
+  stroke-width:10px;
+  pointer-events:none;
+}
 
 /* Modal */
 .modal{
   position:fixed;
   inset:0;
-  background: rgba(0,0,0,.35);
+  background:rgba(0,0,0,.35);
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index: 999;
+  z-index:999;
 }
 
 .modalInner{
-  width: min(420px, 92vw);
+  width:min(420px,92vw);
   background:#fff;
-  border-radius: 16px;
+  border-radius:16px;
   border:1px solid var(--line);
-  box-shadow: var(--shadow);
-  padding: 14px;
+  box-shadow:var(--shadow);
+  padding:14px;
 }
 
 .modalRow{
@@ -412,9 +445,22 @@ thead th{background:#fafafa;}
   font-weight:800;
 }
 
-@media (max-width: 980px){
-  .layout{grid-template-columns: 1fr;}
-  .sidebar{height:auto; position:relative; top:auto;}
-  .grid2{grid-template-columns:1fr;}
-  .gameGrid{grid-template-columns:1fr 1fr;}
+@media(max-width:980px){
+  .layout{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    height:auto;
+    position:relative;
+    top:auto;
+  }
+
+  .grid2{
+    grid-template-columns:1fr;
+  }
+
+  .gameGrid{
+    grid-template-columns:1fr 1fr;
+  }
 }
