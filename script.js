@@ -3,8 +3,9 @@
  * Includes:
  * - Customer game select
  * - Staff setup
- * - Speed Round positions fixed
+ * - Speed Round fixed positions
  * - Noughts & Crosses X/O mode
+ * - Bigger X/O click zones
  *********************************/
 
 const STAFF_PIN = "1234";
@@ -137,9 +138,11 @@ const GAMES = [
       { cell: 0, x: 347, y: 343 },
       { cell: 1, x: 500, y: 355 },
       { cell: 2, x: 663, y: 339 },
+
       { cell: 3, x: 354, y: 495 },
       { cell: 4, x: 497, y: 506 },
       { cell: 5, x: 660, y: 502 },
+
       { cell: 6, x: 346, y: 659 },
       { cell: 7, x: 494, y: 660 },
       { cell: 8, x: 655, y: 656 }
@@ -147,7 +150,7 @@ const GAMES = [
   }
 ];
 
-const KEY_STATE = "rh_scoring_v2_with_xo_v1";
+const KEY_STATE = "rh_scoring_v2_with_xo_v2";
 
 let staffUnlocked = false;
 let undoStack = [];
@@ -843,17 +846,13 @@ function drawOverlayButtons(g, baseW, baseH) {
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     c.setAttribute("cx", String(b.x));
     c.setAttribute("cy", String(b.y));
-    c.setAttribute("r", g.type === "xo" ? "70" : "60");
+    c.setAttribute("r", g.type === "xo" ? "105" : "60");
 
     const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
     t.setAttribute("x", String(b.x));
     t.setAttribute("y", String(b.y));
 
-    if (g.type === "xo") {
-      t.textContent = "";
-    } else {
-      t.textContent = String(b.score);
-    }
+    t.textContent = g.type === "xo" ? "" : String(b.score);
 
     group.appendChild(c);
     group.appendChild(t);
