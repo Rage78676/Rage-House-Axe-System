@@ -8,7 +8,9 @@
   --radius:16px;
 }
 
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
 
 body{
   margin:0;
@@ -29,7 +31,8 @@ body{
   justify-content:space-between;
 }
 
-.topLeft,.topRight{
+.topLeft,
+.topRight{
   display:flex;
   gap:10px;
   align-items:center;
@@ -135,17 +138,33 @@ body{
   margin-bottom:10px;
 }
 
-.h2{margin:0;font-size:18px;}
-.h3{margin:0 0 6px 0;font-size:18px;}
-.muted{color:var(--muted);font-size:13px;}
-.tiny{font-size:12px}
+.h2{
+  margin:0;
+  font-size:18px;
+}
+
+.h3{
+  margin:0 0 6px 0;
+  font-size:18px;
+}
+
+.muted{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.tiny{
+  font-size:12px;
+}
 
 button:disabled{
   opacity:.55;
   cursor:not-allowed;
 }
 
-.btn,.btnPrimary,.btnDark{
+.btn,
+.btnPrimary,
+.btnDark{
   border-radius:12px;
   border:1px solid var(--line);
   padding:10px 12px;
@@ -184,7 +203,8 @@ button:disabled{
   margin:10px 0 6px;
 }
 
-input,select{
+input,
+select{
   width:100%;
   padding:10px 12px;
   border-radius:12px;
@@ -278,7 +298,8 @@ table{
   min-width:900px;
 }
 
-th,td{
+th,
+td{
   border-bottom:1px solid var(--line);
   padding:10px;
   text-align:center;
@@ -366,13 +387,13 @@ thead th{
 /* Noughts & Crosses X/O marks */
 .xoMark{
   font-weight:1000;
-  font-size:130px;
+  font-size:220px;
   text-anchor:middle;
   dominant-baseline:middle;
   fill:#ffffff;
   paint-order:stroke;
   stroke:rgba(0,0,0,.75);
-  stroke-width:10px;
+  stroke-width:14px;
   pointer-events:none;
 }
 
