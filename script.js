@@ -97,11 +97,23 @@ const GAMES = [
     baseW: 1024,
     baseH: 1024,
     buttons: [
-      { score: 1, x: 300, y: 300 },
-      { score: 2, x: 450, y: 420 },
-      { score: 3, x: 512, y: 512 },
-      { score: 5, x: 650, y: 420 },
-      { score: 10, x: 720, y: 300 }
+      { score: 20, x: 328, y: 277 },
+      { score: 20, x: 728, y: 277 },
+      { score: 20, x: 327, y: 445 },
+      { score: 20, x: 729, y: 447 },
+      { score: 20, x: 727, y: 608 },
+      { score: 20, x: 323, y: 610 },
+
+      { score: 10, x: 513, y: 328 },
+      { score: 10, x: 631, y: 385 },
+      { score: 10, x: 404, y: 384 },
+      { score: 10, x: 400, y: 542 },
+      { score: 10, x: 625, y: 554 },
+      { score: 10, x: 510, y: 653 },
+      { score: 10, x: 629, y: 704 },
+      { score: 10, x: 402, y: 711 },
+
+      { score: 50, x: 508, y: 491 }
     ]
   },
   {
@@ -124,7 +136,7 @@ const GAMES = [
   }
 ];
 
-const KEY_STATE = "rh_scoring_v2_customer_game_select_fixed";
+const KEY_STATE = "rh_scoring_v2_customer_game_select_fixed_v2";
 
 let staffUnlocked = false;
 let undoStack = [];
@@ -210,8 +222,11 @@ function init() {
 
   setStaffUnlocked(false);
 
-  if (state.sessionEnded) showSessionEndedOverlay();
-  else hideSessionEndedOverlay();
+  if (state.sessionEnded) {
+    showSessionEndedOverlay();
+  } else {
+    hideSessionEndedOverlay();
+  }
 
   showPage("choose");
 
