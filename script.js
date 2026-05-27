@@ -1,5 +1,10 @@
 /*********************************
  * Rage House Scoring V2
+ * Includes:
+ * - Customer game select
+ * - Staff setup
+ * - Speed Round positions fixed
+ * - Noughts & Crosses X/O mode
  *********************************/
 
 const STAFF_PIN = "1234";
@@ -8,6 +13,7 @@ const GAMES = [
   {
     id: "ducks",
     name: "Ducks",
+    type: "score",
     image: "images/ducks.png",
     baseW: 1024,
     baseH: 1024,
@@ -27,6 +33,7 @@ const GAMES = [
   {
     id: "axe-classic",
     name: "Axe Classic",
+    type: "score",
     image: "images/axe-classic.png",
     baseW: 1024,
     baseH: 1024,
@@ -41,6 +48,7 @@ const GAMES = [
   {
     id: "darts",
     name: "Darts",
+    type: "score",
     image: "images/darts.png",
     baseW: 1024,
     baseH: 1024,
@@ -70,6 +78,7 @@ const GAMES = [
   {
     id: "zombie",
     name: "Zombie",
+    type: "score",
     image: "images/zombie.png",
     baseW: 1024,
     baseH: 1024,
@@ -93,6 +102,7 @@ const GAMES = [
   {
     id: "speed-round",
     name: "Speed Round",
+    type: "score",
     image: "images/speed-round.png",
     baseW: 1024,
     baseH: 1024,
@@ -119,24 +129,25 @@ const GAMES = [
   {
     id: "noughts-crosses",
     name: "Noughts & Crosses",
+    type: "xo",
     image: "images/Naughts & Crossies.png",
     baseW: 1024,
     baseH: 1024,
     buttons: [
-      { score: 1, x: 280, y: 280 },
-      { score: 1, x: 512, y: 280 },
-      { score: 1, x: 744, y: 280 },
-      { score: 1, x: 280, y: 512 },
-      { score: 1, x: 512, y: 512 },
-      { score: 1, x: 744, y: 512 },
-      { score: 1, x: 280, y: 744 },
-      { score: 1, x: 512, y: 744 },
-      { score: 1, x: 744, y: 744 }
+      { cell: 0, x: 347, y: 343 },
+      { cell: 1, x: 500, y: 355 },
+      { cell: 2, x: 663, y: 339 },
+      { cell: 3, x: 354, y: 495 },
+      { cell: 4, x: 497, y: 506 },
+      { cell: 5, x: 660, y: 502 },
+      { cell: 6, x: 346, y: 659 },
+      { cell: 7, x: 494, y: 660 },
+      { cell: 8, x: 655, y: 656 }
     ]
   }
 ];
 
-const KEY_STATE = "rh_scoring_v2_customer_game_select_fixed_v2";
+const KEY_STATE = "rh_scoring_v2_with_xo_v1";
 
 let staffUnlocked = false;
 let undoStack = [];
@@ -151,6 +162,9 @@ let state = loadState() ?? {
   throwsPerRound: 7,
   players: ["Player 1", "Player 2"],
   throws: [],
+  xoBoard: Array(9).fill(null),
+  xoTurn: "X",
+  xoGameEnded: false,
   timerRunning: false,
   timerEndsAt: null,
   timerMinutes: 60
@@ -222,11 +236,8 @@ function init() {
 
   setStaffUnlocked(false);
 
-  if (state.sessionEnded) {
-    showSessionEndedOverlay();
-  } else {
-    hideSessionEndedOverlay();
-  }
+  if (state.sessionEnded) showSessionEndedOverlay();
+  else hideSessionEndedOverlay();
 
   showPage("choose");
 
@@ -265,9 +276,18 @@ function init() {
     const btn = e.target.closest(".scoreBtn");
     if (!btn) return;
 
+    const game = currentGame();
+    if (!game) return;
+
+    if (game.type === "xo") {
+      const cell = Number(btn.dataset.cell);
+      if (!Number.isFinite(cell)) return;
+      playXO(cell);
+      return;
+    }
+
     const score = Number(btn.dataset.score);
     if (!Number.isFinite(score)) return;
-
     addScore(score);
   });
 
@@ -329,7 +349,7 @@ function setStaffUnlocked(unlocked) {
   else if (!state.sessionEnded) showPage("choose");
 }
 
-/* Session setup */
+/* Session */
 function startSession() {
   if (!staffUnlocked) return;
 
@@ -345,6 +365,9 @@ function startSession() {
   state.sessionEnded = false;
   state.gameId = null;
   state.throws = [];
+  state.xoBoard = Array(9).fill(null);
+  state.xoTurn = "X";
+  state.xoGameEnded = false;
 
   state.timerRunning = true;
   state.timerEndsAt = Date.now() + state.timerMinutes * 60 * 1000;
@@ -367,6 +390,9 @@ function resetSession() {
   state.sessionEnded = false;
   state.gameId = null;
   state.throws = [];
+  state.xoBoard = Array(9).fill(null);
+  state.xoTurn = "X";
+  state.xoGameEnded = false;
   state.timerRunning = false;
   state.timerEndsAt = null;
 
@@ -450,8 +476,20 @@ function renderGameCards() {
 function chooseGame(gameId) {
   if (!state.sessionStarted || state.sessionEnded) return;
 
+  const game = GAMES.find(g => g.id === gameId);
+  if (!game) return;
+
   state.gameId = gameId;
-  resetScoreboard();
+
+  if (game.type === "xo") {
+    state.xoBoard = Array(9).fill(null);
+    state.xoTurn = "X";
+    state.xoGameEnded = false;
+    state.throws = [];
+  } else {
+    resetScoreboard();
+  }
+
   saveState();
 
   renderTargetIfGameSelected();
@@ -524,7 +562,7 @@ function hideSessionEndedOverlay() {
   sessionEndedOverlay.style.display = "none";
 }
 
-/* Scoreboard data */
+/* Standard score data */
 function resetScoreboard() {
   state.throws = Array.from({ length: state.players.length }, () =>
     Array.from({ length: state.rounds }, () =>
@@ -569,6 +607,13 @@ function addScore(score) {
 }
 
 function undo() {
+  const game = currentGame();
+
+  if (game?.type === "xo") {
+    alert("Undo is not available for Noughts & Crosses yet.");
+    return;
+  }
+
   const last = undoStack.pop();
   if (!last) return;
 
@@ -589,7 +634,78 @@ function gameTotal(p) {
   }, 0);
 }
 
+/* Noughts & Crosses */
+function playXO(cell) {
+  if (state.xoGameEnded) return;
+  if (state.xoBoard[cell]) return;
+
+  state.xoBoard[cell] = state.xoTurn;
+
+  const winner = checkXOWinner();
+
+  if (winner) {
+    state.xoGameEnded = true;
+    statusText.textContent = `${winner} wins!`;
+  } else if (state.xoBoard.every(Boolean)) {
+    state.xoGameEnded = true;
+    statusText.textContent = "Noughts & Crosses finished — board full.";
+  } else {
+    state.xoTurn = state.xoTurn === "X" ? "O" : "X";
+    statusText.textContent = `${state.xoTurn}'s turn`;
+  }
+
+  saveState();
+  renderXOBoard();
+  renderScoreboard();
+}
+
+function checkXOWinner() {
+  const b = state.xoBoard;
+  const wins = [
+    [0,1,2],
+    [3,4,5],
+    [6,7,8],
+    [0,3,6],
+    [1,4,7],
+    [2,5,8],
+    [0,4,8],
+    [2,4,6]
+  ];
+
+  for (const [a, c, d] of wins) {
+    if (b[a] && b[a] === b[c] && b[a] === b[d]) {
+      return b[a];
+    }
+  }
+
+  return null;
+}
+
+function renderXOBoard() {
+  const game = currentGame();
+  if (!game || game.type !== "xo") return;
+
+  const marks = overlay.querySelectorAll(".xoMark");
+  marks.forEach(m => m.remove());
+
+  game.buttons.forEach(btn => {
+    const mark = state.xoBoard[btn.cell];
+    if (!mark) return;
+
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.classList.add("xoMark");
+    t.setAttribute("x", String(btn.x));
+    t.setAttribute("y", String(btn.y));
+    t.textContent = mark;
+
+    overlay.appendChild(t);
+  });
+}
+
+/* Scoreboard render */
 function renderScoreboard() {
+  const game = currentGame();
+
   if (!state.gameId) {
     scoreboardEl.innerHTML = `<div class="muted" style="padding:14px;">No game selected yet.</div>`;
     statusText.textContent = state.sessionStarted
@@ -598,11 +714,33 @@ function renderScoreboard() {
     return;
   }
 
+  if (game?.type === "xo") {
+    const winner = checkXOWinner();
+
+    if (state.xoGameEnded && winner) {
+      statusText.textContent = `${winner} wins!`;
+    } else if (state.xoGameEnded) {
+      statusText.textContent = "Noughts & Crosses finished — board full.";
+    } else {
+      statusText.textContent = `${state.xoTurn}'s turn`;
+    }
+
+    scoreboardEl.innerHTML = `
+      <div class="muted" style="padding:14px;">
+        Noughts & Crosses mode — click a square to place X or O.<br>
+        Current turn: <strong>${state.xoTurn}</strong><br>
+        The game ends when someone wins or the board is full.
+      </div>
+    `;
+    return;
+  }
+
   if (!Array.isArray(state.throws) || state.throws.length === 0) {
     resetScoreboard();
   }
 
   const next = findNextEmpty();
+
   statusText.textContent = next
     ? `Round ${next.r + 1}, Throw ${next.t + 1} — ${state.players[next.p]}`
     : "Game finished";
@@ -672,6 +810,7 @@ function renderTarget() {
   gameImage.onload = () => {
     drawOverlayButtons(g, baseW, baseH);
     fitOverlayToContainedImage(baseW, baseH);
+    if (g.type === "xo") renderXOBoard();
   };
 
   gameImage.src = g.image;
@@ -679,29 +818,42 @@ function renderTarget() {
   setTimeout(() => {
     drawOverlayButtons(g, baseW, baseH);
     fitOverlayToContainedImage(baseW, baseH);
+    if (g.type === "xo") renderXOBoard();
   }, 0);
 }
 
 function drawOverlayButtons(g, baseW, baseH) {
+  while (overlay.firstChild) {
+    overlay.removeChild(overlay.firstChild);
+  }
+
   overlay.setAttribute("viewBox", `0 0 ${baseW} ${baseH}`);
   overlay.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-  overlay.innerHTML = "";
 
   for (const b of g.buttons) {
     const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
     group.classList.add("scoreBtn");
-    group.dataset.score = String(b.score);
+
+    if (g.type === "xo") {
+      group.dataset.cell = String(b.cell);
+    } else {
+      group.dataset.score = String(b.score);
+    }
 
     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     c.setAttribute("cx", String(b.x));
     c.setAttribute("cy", String(b.y));
-    c.setAttribute("r", "44");
+    c.setAttribute("r", g.type === "xo" ? "70" : "60");
 
     const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
     t.setAttribute("x", String(b.x));
     t.setAttribute("y", String(b.y));
-    t.textContent = String(b.score);
+
+    if (g.type === "xo") {
+      t.textContent = "";
+    } else {
+      t.textContent = String(b.score);
+    }
 
     group.appendChild(c);
     group.appendChild(t);
